@@ -1,0 +1,23 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres-tutorial
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: manager
+      POSTGRES_DB: tutorialseguranca
+    ports:
+      - "5432:5432"
+    networks:
+      - tutorial-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+networks:
+  tutorial-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local

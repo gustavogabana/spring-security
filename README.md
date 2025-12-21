@@ -95,3 +95,16 @@ Na função, passamos as datas de expiração e criação do token.
 Também passado o subject, que é quem criou. Normalmente o e-mail, para validar via comparação depois.
 O subject pode ser outra informação única do usuário dependendo da regra de negócio.
 Também é passado o claim, uma informação que fica dentro do token. Serve também para identificar e definir permissões.
+
+### Security Filter
+
+Para fazer o token funciona a cada requisição, é preciso configurar no spring via filtro interno.
+Classe SecurityFilter que extende a classe OncePerRequestFilter e sobreescreve o método doFilterInternal.
+Toda requisição irá passar pelo doFilterInternal.
+Dentro desse método fica implementado a lógica para validar o token enviado.
+Os dados são pegos do token decoded, da claims e subject, e construído o JWTUserData.
+O userData com os dados é passado no UsernamePasswordAuthenticationToken(userData, null).
+O token é colocado no authorization via security context holder do spring.
+O método chama o doFilter passando request e response para continuar.
+O spring se encarrega da exception caso algo de errado.
+O securityFilter precisa ser adicionado no filterChain via addFilterBefore, junto com a classe de autenticação (UsernamePasswordAuthenticationFilter).

@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.config.TokenConfig;
 import com.example.demo.dto.request.LoginRequestDTO;
 import com.example.demo.dto.request.RegisterUserRequestDTO;
 import com.example.demo.dto.response.LoginResponseDTO;
@@ -25,17 +26,28 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final TokenConfig tokenConfig;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
+    public AuthController(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            AuthenticationManager authenticationManager,
+            TokenConfig tokenConfig
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
+        this.tokenConfig = tokenConfig;
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO requestDTO) {
         UsernamePasswordAuthenticationToken userAndPass = new UsernamePasswordAuthenticationToken(requestDTO.email(), requestDTO.password());
         Authentication authenticated = authenticationManager.authenticate(userAndPass);
+        User user = (User) authenticated.getPrincipal();
+        if (user == null) throw new IllegalStateException("Erro de autenticacao");
+        String token = tokenConfig.generateToken(user);
+        return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 
     @PostMapping("/register")

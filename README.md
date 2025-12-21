@@ -75,9 +75,23 @@ Se as informações estiverem corretas com o que está na tabela da entidade que
 O tipo Authentication, além de sucesso, contém também a lista de authorities (permissões/roles) recuperados do banco.
 Ele faz o fluxo chamando a classe authconfig que implementa a user details service.
 Ele serve como prova de autenticação do usuário para o restante da aplicação.
+O authentication manager precisa ser criado no security config, recebendo um auth configuration como paramento, sendo um @Bean.
 
 ### Fluxo de autenticação
 
 Authentication manager -> Authentication configure -> Authentication provider 
 -> UsernamePasswordAuthenticationToken -> DaoAuthenticationProvider (classe interna do spring)
 -> UserDetailsService -> (nossa classe) AuthConfig.
+
+### JWT e AUTH0
+
+Para usar JWT e AUTH0, é preciso criar uma classe TokenConfig, que será um @Component do spring.
+JWT é um token assinado que prova quem é o usuário depois que ele loga na aplicação.
+O algoritmo precisa ser passado para a assinatura ser válida, normalmente de Algorithm algorithm = Algorithm.HMAC256(secret).
+Na classe tokenConfig, ele é criado a partir das informações do usuário e de uma secret.
+A secret normalmente fica como ENV do OS ou fica no .properties do app.
+A função/builder usada pra criar, normalmente, vem de com.auth0.jwt.JWT.
+Na função, passamos as datas de expiração e criação do token.
+Também passado o subject, que é quem criou. Normalmente o e-mail, para validar via comparação depois.
+O subject pode ser outra informação única do usuário dependendo da regra de negócio.
+Também é passado o claim, uma informação que fica dentro do token. Serve também para identificar e definir permissões.

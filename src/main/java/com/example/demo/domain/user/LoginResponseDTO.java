@@ -1,5 +1,6 @@
-package com.example.demo.dto.response;
+package com.example.demo.domain.user;
 
 public record LoginResponseDTO(
         String token
-) { }
+) {
+}

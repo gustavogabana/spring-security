@@ -5,8 +5,8 @@
 docker run -d \
   --name postgres-tutorial \
   -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=manager \
-  -e POSTGRES_DB=tutorialseguranca \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=security \
   -p 5432:5432 \
   -v postgres-data:/var/lib/postgresql \
   postgres:latest
@@ -14,7 +14,7 @@ docker run -d \
 ## Flyway
 
 O flyway é um esquema de migration para querys no banco de dados. Ele funciona de forma sequencial por versão.
-A sintaxe obrigatória do arquivo é vx__ e a descrição .sql.
+A sintaxe obrigatória do arquivo é Vx__ e a descrição .sql.
 Uma vez que o arquivo é executado, ele não pode ser mais modificado.
 Para cada query nova, é necessário um novo arquivo de migration flyway.
 
@@ -26,6 +26,15 @@ No Spring Security, a autenticação e a autorização são baseadas numa espéc
 O framework precisa saber quem é usuário, qual a senha e quais as permissões que este usuário possui.
 Esse contrato é definida por uma interface específica, chamada de user details.
 A classe principal que representa o usuário precisa implementar essa interface.
+
+#### getAuthotirties implementado por contrato da interface UserDetails
+
+O método getAuthorities() faz parte da interface UserDetails do Spring Security. 
+Ele retorna uma coleção de objetos que implementam GrantedAuthority, representando as permissões do usuário. 
+O uso de wildcards (? extends) no retorno permite que o Spring aceite qualquer subtipo de autoridade. 
+A classe SimpleGrantedAuthority é utilizada para converter as Strings de "roles" em objetos reconhecíveis pelo framework. 
+No momento da requisição, o Spring consulta essa lista para validar se o usuário possui os privilégios necessários. 
+Sem o retorno correto dessas roles, o acesso aos endpoints protegidos é negado com erro 403 Forbidden.
 
 ### Repository
 
@@ -98,13 +107,12 @@ Também é passado o claim, uma informação que fica dentro do token. Serve tam
 
 ### Security Filter
 
-Para fazer o token funciona a cada requisição, é preciso configurar no spring via filtro interno.
-Classe SecurityFilter que extende a classe OncePerRequestFilter e sobreescreve o método doFilterInternal.
-Toda requisição irá passar pelo doFilterInternal.
-Dentro desse método fica implementado a lógica para validar o token enviado.
-Os dados são pegos do token decoded, da claims e subject, e construído o JWTUserData.
-O userData com os dados é passado no UsernamePasswordAuthenticationToken(userData, null).
-O token é colocado no authorization via security context holder do spring.
-O método chama o doFilter passando request e response para continuar.
-O spring se encarrega da exception caso algo de errado.
-O securityFilter precisa ser adicionado no filterChain via addFilterBefore, junto com a classe de autenticação (UsernamePasswordAuthenticationFilter).
+Para que a autenticação via token funcione em cada requisição, é necessário configurar um filtro interno no Spring. 
+A classe SecurityFilter estende OncePerRequestFilter e sobrescreve o método doFilterInternal, garantindo que a lógica seja executada exatamente uma vez por requisição. 
+Toda requisição interceptada passa por este método, onde é feita a tentativa de recuperar o token do cabeçalho Authorization. 
+Caso o token esteja presente, ele é validado pelo TokenService, que extrai o identificador (subject) do usuário. 
+Com o identificador, o sistema consulta o banco de dados via UserRepository para carregar o objeto UserDetails completo. 
+A autenticação é então construída utilizando UsernamePasswordAuthenticationToken, passando o objeto do usuário e suas permissões (authorities). 
+Este objeto de autenticação é injetado no SecurityContextHolder do Spring, efetivando a autorização do usuário para aquela requisição específica. 
+Ao final, o método chama filterChain.doFilter para permitir que a requisição siga seu fluxo normal para outros filtros ou para o Controller. 
+Para que o Spring reconheça este fluxo, o filtro deve ser adicionado manualmente na classe de configuração de segurança através do método addFilterBefore.
